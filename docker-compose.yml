@@ -1,0 +1,33 @@
+version: '3.12.3'
+services:
+
+  flask-app:
+    container_name: 'flask-python-application'
+    build:
+      context: .
+    ports:
+      - '8000:8000'
+    environment:
+      MYSQL_HOST: 'mysql-db'
+      MYSQL_USER: 'root'
+      MYSQL_PASSWORD: 'root'
+      MYSQL_DB: 'devops'
+    depends_on:
+      - 'mysql-db'
+
+  mysql-db:
+    container_name: 'mysql-volume-mount'
+    image: 'mysql:5.7'
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'devops'
+    volumes:
+      - type: volume
+        source: mysql-volume-data
+        target: /var/lib/mysql
+
+volumes:
+  mysql-volume-data:
+
