@@ -130,3 +130,103 @@ docker compose down
 ```sh
 docker logs <container id>
 ```
+
+
+# Multi-stage docker build 
+1. It uses to optimize the image 
+2. In it file can be divided into stages after stage 1, the image can be compressed and use in the next stage, generally in 1st stage we include the base image and all run cmd and then get its compressed version can be used in stage 2 which only has last CMD cmd 
+For Ex.
+```sh
+#----------------------------stage 1 started -----------------------------------------
+# Use an official Python runtime as the base image
+FROM python:3.9-slim AS Backend_flask
+
+# Set the working directory in the container
+WORKDIR /app
+
+# install required packages for system
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y gcc default-libmysqlclient-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the requirements file into the container
+COPY requirements.txt .
+
+# Install app dependencies
+RUN pip install mysqlclient
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY . .
+
+#------------------------stage 2 started ------------------
+#Used compressed version of stage 1
+FROM python:3.9-slim
+
+#Set working directory for stage 2
+WORKDIR /app
+
+#Copy libraries
+COPY --from=Backend_flask /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.11/site-packages/
+
+#Copy Src code from stage 1
+COPY --from=Backend_flask /app /app
+
+# Specify the command to run your application
+CMD ["python", "app.py"]
+```
+
+3. run the build cmd with dockerfile 
+
+
+# Entrypoint VS CMD
+>[Entrypoint](): its same as CMD command but parameters cannot be overwritten
+>[CMD](): Parameters can be overwritten , if anyone can pass parameter while building image 
+
+# RUN VS CMD
+>[RUN](): This is used in the intermediate layer of image
+>[CMD](): this is used in end of image , this generally use to run app file 
+
+# Docker Scout
+1. Docker scout is used for vulnerabilities scan for image
+
+
+##### Steps:
+1. Create a folder 
+```sh
+mkdir -p $HOME/.docker/scout
+```
+2. Install using curl cmd
+```sh
+curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh -o install-scout.sh
+sh install-scout.sh
+```
+3. log in with docker hub credentials
+goto: dockerhub -> Account Setting -> PAT -> (Give name and select access) and generate 
+-> the 2 cmd will shown, with that login in shell
+
+4. run docker scout cmd 
+```sh
+docker scout cves two-tier-flask:latest
+```
+`note`: to view scan results in short 
+```sh
+docker scout quickview two-tier-flask:latest
+```
+
+# Docker push and pull
+1. Log in docker credentials with PAT
+2. make sure image name is with dockerhub uname if not make another copy of image with desired name
+```sh
+docker image tag <image name>:<tag> <uname>/<image name>:<tag>
+```
+3. push image
+```sh
+docker push pratiksha1999/two-tier-flask:latest
+```
+4. pull image
+```sh
+docker pull pratiksha1999/stockmanager
+```
+
