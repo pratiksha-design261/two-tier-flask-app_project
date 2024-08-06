@@ -61,8 +61,72 @@ docker run -d --network twotire --name two-tire-application -p 5000:5000 -e MYSQ
      ```sh
      show tabels;
      ```
-     E. Get all entered data from tabel 
+     E. Get all entered data from the tabel 
      ```sh
      select * from <tabel name>;
      ```
-     
+
+
+##### Steps to use docker-compose for the same project 
+Step 1: Install docker-compose 
+   ```sh
+   sudo apt-get install docker-compose-v2
+   ```
+   `note`: if docker-compose older version is available uninstall it with below cmd 
+   ```sh
+   sudo apt purge docker-compose
+   ```
+Step 2: Create docker-compose.yml file 
+ ```sh
+version: '3.9'
+services:
+
+  flask-app:
+    container_name: 'flask-python-application'
+    build:
+      context: .
+    ports:
+      - '5000:5000'
+    environment:
+      MYSQL_HOST: 'mysql-db'
+      MYSQL_USER: 'root'
+      MYSQL_PASSWORD: 'root'
+      MYSQL_DB: 'devops'
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+
+  mysql-db:
+    container_name: 'mysql-db'
+    image: 'mysql:5.7'
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_DATABASE: 'devops'
+    volumes:
+      - type: volume
+        source: mysql-volume-data
+        target: /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mysql-volume-data:
+```
+
+Step 3: Run the docker-compose file
+```sh
+docker compose up -d
+```
+`note`: 1. if we want to make any changes in the docker-compose file previous running container must be stopped to reflect new changes 
+```sh
+docker compose down
+```
+`note`: 2. if any of container fail then check docker logs 
+```sh
+docker logs <container id>
+```
